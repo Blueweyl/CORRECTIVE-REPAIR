@@ -200,4 +200,5 @@ textarea.input { font-size: 15px; resize: vertical; }
 .rec-meta { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
 .rec-range { color: oklch(60% 0.01 260); font-size: 12px; margin-top: 4px; }
 .rec-remarks { color: oklch(72% 0.01 260); font-size: 12.5px; margin-top: 6px; font-style: italic; }
+.rec-photo-link { color: var(--accent); display: inline-block; margin-top: 8px; font-size: 12.5px; font-weight: 600; }
 .rec img { width: 100%; max-height: 140px; object-fit: cover; border-radius: 7px; margin-top: 8px; display: block; }

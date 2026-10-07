@@ -28,6 +28,17 @@
   }
   function roundHalf(n) { return Math.round(n * 2) / 2; }
 
+  // Display labels, derived from the raw fields (records from the Sheet arrive without them).
+  function withLabels(r) {
+    return {
+      ...r,
+      actualHoursLabel: (Number(r.actualHours) || 0).toFixed(1) + ' hrs',
+      workDateLabel: fmtDateShort(r.workDate),
+      startLabel: fmtDateShort(r.startDate) + ' ' + fmtTime12(r.startTime),
+      endLabel: fmtDateShort(r.endDate) + ' ' + fmtTime12(r.endTime),
+    };
+  }
+
   // Downscale camera photos before storing/uploading (phone photos are often 5–10 MB).
   function compressImage(file) {
     return new Promise((resolve, reject) => {
@@ -53,6 +64,7 @@
   // ---------- state ----------
   const state = {
     actualHoursTouched: false,
+    recordId: null,
     photo: null,
     history: [],
     submitting: false,
@@ -136,13 +148,30 @@
       add('rec-meta', r.team + ' · ' + r.workDateLabel);
       add('rec-range', r.startLabel + ' → ' + r.endLabel);
       if (r.remarks) add('rec-remarks', '"' + r.remarks + '"');
-      const src = r.photo || r.photoUrl;
-      if (src) { const img = document.createElement('img'); img.src = src; img.alt = 'Work photo'; img.loading = 'lazy'; card.appendChild(img); }
+      if (r.photo) {
+        const img = document.createElement('img');
+        img.src = r.photo; img.alt = 'Work photo'; img.loading = 'lazy';
+        card.appendChild(img);
+      } else if (r.photoUrl) {
+        // Drive photos may be private to the owner, so link instead of embedding.
+        const a = document.createElement('a');
+        a.className = 'rec-photo-link'; a.href = r.photoUrl; a.target = '_blank'; a.rel = 'noopener';
+        a.textContent = '📷 View photo in Drive';
+        card.appendChild(a);
+      }
       list.appendChild(card);
     });
   }
 
+  function newRecordId() {
+    const now = new Date();
+    return 'WH-' + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '-' + Math.floor(1000 + Math.random() * 9000);
+  }
+
   function resetForm() {
+    // One ID per entry, reused on retry, so the server can drop a duplicate
+    // if a timed-out submission actually went through.
+    state.recordId = newRecordId();
     el.team.value = '';
     [el.workDate, el.startDate, el.endDate].forEach((i) => { i.value = todayISO(); });
     el.startTime.value = cfg.DEFAULT_START_TIME;
@@ -168,8 +197,8 @@
   function buildRecord() {
     const now = new Date();
     const hours = roundHalf(actualHours());
-    return {
-      id: 'WH-' + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + '-' + Math.floor(1000 + Math.random() * 9000),
+    return withLabels({
+      id: state.recordId,
       leadman: el.leadman.value,
       team: el.team.value,
       workDate: el.workDate.value,
@@ -177,14 +206,10 @@
       endDate: el.endDate.value, endTime: el.endTime.value,
       elapsedHours: Math.round(elapsedHours() * 100) / 100,
       actualHours: hours,
-      actualHoursLabel: hours.toFixed(1) + ' hrs',
       remarks: el.remarks.value.trim(),
       photo: state.photo,
       submittedAt: now.toISOString(),
-      workDateLabel: fmtDateShort(el.workDate.value),
-      startLabel: fmtDateShort(el.startDate.value) + ' ' + fmtTime12(el.startTime.value),
-      endLabel: fmtDateShort(el.endDate.value) + ' ' + fmtTime12(el.endTime.value),
-    };
+    });
   }
 
   function setSubmitting(on) {
@@ -200,15 +225,15 @@
     $('cTeam').textContent = rec.team;
     $('cHours').textContent = rec.actualHoursLabel;
     $('confirmSub').textContent = Api.online ? 'Synced to Google Sheets' : 'Saved on this device (offline mode)';
-    const src = rec.photo || rec.photoUrl;
-    $('cPhoto').hidden = !src;
-    if (src) $('cPhoto').src = src;
+    $('cPhoto').hidden = !rec.photo;
+    if (rec.photo) $('cPhoto').src = rec.photo;
     showView('confirm');
   }
 
   // ---------- events ----------
   el.leadman.addEventListener('change', () => {
     try { localStorage.setItem('lwhr_leadman', el.leadman.value); } catch (e) {}
+    if (Api.online) loadHistory(el.leadman.value);
   });
   [el.startDate, el.startTime, el.endDate, el.endTime].forEach((i) => i.addEventListener('change', refresh));
   // Keep end date in step with start date when the user moves the start forward.
@@ -252,7 +277,7 @@
     setError('');
     setSubmitting(true);
     try {
-      const saved = await Api.submitRecord(buildRecord());
+      const saved = withLabels(await Api.submitRecord(buildRecord()));
       state.history = [saved, ...state.history.filter((r) => r.id !== saved.id)].slice(0, cfg.HISTORY_LIMIT);
       renderHistory();
       showConfirm(saved);
@@ -280,11 +305,16 @@
     el.leadman.value = savedLeadman;
     resetForm();
 
-    const [opts, history] = await Promise.all([Api.getOptions(), Api.listRecords(savedLeadman)]);
+    const [opts] = await Promise.all([Api.getOptions(), loadHistory(savedLeadman)]);
     fillSelect(el.leadman, opts.leadmen, 'Select leadman…');
     fillSelect(el.team, opts.teams, 'Select team…');
     if (!el.leadman.value && opts.leadmen.includes(savedLeadman)) el.leadman.value = savedLeadman;
-    state.history = history;
+  }
+
+  async function loadHistory(leadman) {
+    const records = await Api.listRecords(leadman);
+    if (leadman !== el.leadman.value && el.leadman.value) return; // a newer selection won
+    state.history = records.map(withLabels);
     renderHistory();
   }
 
