@@ -7,6 +7,12 @@ A mobile-first web form that leadmen use to log daily work hours: team, work dat
 - **Frontend:** plain HTML, CSS and JS with no build step (repository root).
 - **Backend:** a Google Apps Script web app in [`backend/`](backend/README.md) that writes records to a Google Sheet and saves photos to a Google Drive folder. See `backend/README.md` for the deployment steps.
 
+## Live site
+
+**https://leadman-work-hours.netlify.app**: hosted on Netlify (project `leadman-work-hours`). `netlify.toml` publishes only `index.html`, `css/` and `js/`, and serves the JS and CSS with `no-cache` so phones pick up changes right away.
+
+To publish changes, redeploy from this folder. To have every push redeploy automatically, connect the GitHub repo under Netlify → Project configuration → Build & deploy.
+
 ## Run locally
 
 ```bash
