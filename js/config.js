@@ -3,7 +3,7 @@
 // Once the Google Apps Script backend is deployed, paste its Web App URL here
 // (https://script.google.com/macros/s/.../exec) to sync to Google Sheets + Drive.
 window.APP_CONFIG = {
-  API_URL: '',
+  API_URL: 'https://script.google.com/macros/s/AKfycbxP0-RebEKr2TxayxqJSOmcDW-H0Z-MqsarcxWvPL0cjGbrBfuMZulOhWdlvSdrIAgbVA/exec',
 
   // Fallback dropdown lists. In online mode these are loaded from the Sheet instead.
   LEADMEN: ['Juan Dela Cruz', 'Pedro Reyes', 'Mario Santos', 'Ramon Flores', 'Ernesto Bautista'],
