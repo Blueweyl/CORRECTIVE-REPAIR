@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1c22">
+  <title>Leadman Work Hours</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%23f28a1e%22/%3E%3Crect x=%229%22 y=%229%22 width=%2214%22 height=%2214%22 rx=%222%22 fill=%22none%22 stroke=%22%231a1c22%22 stroke-width=%223%22/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="logo" aria-hidden="true"></div>
+    <div>
+      <div class="title">LEADMAN WORK HOURS RECORD</div>
+      <div class="subtitle" id="todayLabel"></div>
+    </div>
+    <span class="mode-badge" id="modeBadge"></span>
+  </header>
+
+  <!-- FORM -->
+  <section class="view" id="view-form">
+    <form class="form-body" id="recordForm" novalidate>
+
+      <div class="card">
+        <div class="card-label">1 · LEADMAN &amp; TEAM</div>
+        <label class="field-label" for="leadman">Leadman</label>
+        <select class="input" id="leadman"><option value="">Select leadman…</option></select>
+        <label class="field-label" for="team" style="margin-top:12px">Team</label>
+        <select class="input" id="team"><option value="">Select team…</option></select>
+      </div>
+
+      <div class="card">
+        <div class="card-label">2 · WORK DATE</div>
+        <input class="input" type="date" id="workDate" aria-label="Work date">
+      </div>
+
+      <div class="card">
+        <div class="card-label">3 · START</div>
+        <div class="grid-2">
+          <div><label class="field-label" for="startDate">Date</label><input class="input" type="date" id="startDate"></div>
+          <div><label class="field-label" for="startTime">Time</label><input class="input" type="time" id="startTime"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">4 · END</div>
+        <div class="grid-2">
+          <div><label class="field-label" for="endDate">Date</label><input class="input" type="date" id="endDate"></div>
+          <div><label class="field-label" for="endTime">Time</label><input class="input" type="time" id="endTime"></div>
+        </div>
+      </div>
+
+      <div class="elapsed" id="elapsedBox" hidden>
+        <div>
+          <div class="elapsed-label">ELAPSED (START → END)</div>
+          <div class="elapsed-value" id="elapsedLabel"></div>
+        </div>
+        <div class="elapsed-icon" aria-hidden="true">⏱</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">5 · ACTUAL HOURS WORKED</div>
+        <div class="stepper">
+          <button type="button" id="decActual" aria-label="Decrease hours">−</button>
+          <input class="input" type="number" step="0.5" min="0" inputmode="decimal" id="actualHours" aria-label="Actual hours worked">
+          <button type="button" id="incActual" aria-label="Increase hours">+</button>
+        </div>
+        <div class="hint" id="varianceHint" hidden></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">6 · REMARKS</div>
+        <textarea class="input" id="remarks" rows="3" placeholder="Optional — note delays, breaks, standby, etc."></textarea>
+      </div>
+
+      <div class="card">
+        <div class="card-label">7 · PHOTO (OPTIONAL)</div>
+        <div class="photo-preview" id="photoPreview" hidden>
+          <img id="photoImg" alt="Work photo preview">
+          <button type="button" class="photo-remove" id="removePhoto">Remove</button>
+        </div>
+        <label class="photo-drop">
+          📷 <span id="photoLabel">Add work photo</span>
+          <input type="file" accept="image/*" capture="environment" id="photoInput" hidden>
+        </label>
+      </div>
+
+      <div class="error" id="errorMsg" role="alert" hidden></div>
+
+      <button type="button" class="link-btn" data-action="history">View recent submissions (<span id="historyCount">0</span>)</button>
+    </form>
+
+    <div class="submit-bar">
+      <button type="submit" form="recordForm" class="btn-primary" id="submitBtn">SUBMIT RECORD</button>
+    </div>
+  </section>
+
+  <!-- CONFIRM -->
+  <section class="view" id="view-confirm" hidden>
+    <div class="confirm">
+      <div class="check">✓</div>
+      <div class="confirm-title">Record Saved</div>
+      <div class="confirm-sub" id="confirmSub"></div>
+      <div class="summary">
+        <div class="summary-row"><span>Record ID</span><b id="cId"></b></div>
+        <div class="summary-row"><span>Leadman</span><b id="cLeadman"></b></div>
+        <div class="summary-row"><span>Team</span><b id="cTeam"></b></div>
+        <div class="summary-row"><span>Actual Hours</span><b class="accent" id="cHours"></b></div>
+      </div>
+      <img class="confirm-photo" id="cPhoto" alt="Submitted work photo" hidden>
+      <div class="confirm-actions">
+        <button type="button" class="btn-primary" id="newEntry">New Entry</button>
+        <button type="button" class="btn-secondary" data-action="history">History</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section class="view" id="view-history" hidden>
+    <div class="history">
+      <div class="history-head">
+        <div class="history-title">Recent Submissions</div>
+        <button type="button" class="back-btn" id="backToForm">← Back</button>
+      </div>
+      <div class="empty" id="historyEmpty">No records yet.</div>
+      <div id="historyList" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+  </section>
+
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
